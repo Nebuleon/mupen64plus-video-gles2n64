@@ -111,6 +111,10 @@ ifneq ("$(filter arm%,$(HOST_CPU))","")
     CPU := ARM
     ARCH_DETECTED := 32BITS
     PIC ?= 1
+    ifeq ($(NEON), 1)
+    	CFLAGS += -DARM_ASM
+    	CFLAGS += -D__NEON_OPT
+    endif
     $(warning Architecture "$(HOST_CPU)" not officially supported.')
   endif
 endif
@@ -132,14 +136,33 @@ CFLAGS += $(OPTFLAGS) $(WARNFLAGS) -ffast-math -fno-strict-aliasing -fvisibility
 CXXFLAGS += -fvisibility-inlines-hidden -DSDL_VIDEO_OPENGL_ES2=1 -DSDL_VIDEO_OPENGL=0
 LDFLAGS += $(SHARED)
 
-
-ifeq ("$(MACHINE)","armv6l")
-CFLAGS += -DARM -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux
-CXXFLAGS += -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux
-LDLIBS += -lm -L/opt/vc/lib -lGLESv2 -lEGL -lbcm_host
+ifeq ($(CRC_OPT), 1)
+CFLAGS += -D__CRC_OPT
+CXXFLAGS += -D__CRC_OPT
 endif
 
-LDLIBS += -lm -lEGL
+ifeq ($(HASHMAP_OPT), 1)
+CFLAGS += -D__HASHMAP_OPT
+CXXFLAGS += -D__HASHMAP_OPT
+endif
+
+ifeq ($(TRIBUFFER_OPT), 1)
+CFLAGS += -D__TRIBUFFER_OPT
+CXXFLAGS += -D__TRIBUFFER_OPT
+endif
+
+ifeq ($(VEC4_OPT), 1)
+CFLAGS += -D__VEC4_OPT
+CXXFLAGS += -D__VEC4_OPT
+endif
+
+ifeq ($(VC), 1)
+CFLAGS += -DARM -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux
+CXXFLAGS += -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux
+LDLIBS += -lm -L/opt/vc/lib -lEGL -lbcm_host
+endif
+
+LDLIBS += -lm -lGLESv2 -lEGL
 
 # Since we are building a shared library, we must compile with -fPIC on some architectures
 # On 32-bit x86 systems we do not want to use -fPIC because we don't have to and it has a big performance penalty on this arch
@@ -231,11 +254,14 @@ LDLIBS += $(GL_LDLIBS)
 
 # test for presence of SDL
 ifeq ($(origin SDL_CFLAGS) $(origin SDL_LDLIBS), undefined undefined)
-  ifeq ($(origin SDL_CONFIG), undefined)
-    SDL_CONFIG = $(CROSS_COMPILE)sdl-config
-  endif
+  SDL_CONFIG = $(CROSS_COMPILE)sdl2-config
   ifeq ($(shell which $(SDL_CONFIG) 2>/dev/null),)
-    $(error No SDL development libraries found!)
+    SDL_CONFIG = $(CROSS_COMPILE)sdl-config
+    ifeq ($(shell which $(SDL_CONFIG) 2>/dev/null),)
+      $(error No SDL development libraries found!)
+    else
+      $(warning Using SDL 1.2 libraries)
+    endif
   endif
   SDL_CFLAGS  += $(shell $(SDL_CONFIG) --cflags)
   SDL_LDLIBS += $(shell $(SDL_CONFIG) --libs)
@@ -374,6 +400,12 @@ targets:
 	@echo "    NO_ASM=1      == build without inline assembly code (x86 MMX/SSE)"
 	@echo "    APIDIR=path   == path to find Mupen64Plus Core headers"
 	@echo "    OPTFLAGS=flag == compiler optimization (default: -O3 -flto)"
+	@echo "    NEON=1        == (ARM only) build with NEON optimizations"
+	@echo "    VC=1 	 == build against Broadcom Videocore GLESv2"
+	@echo "    HASHMAP_OPT=1 == Hashmap optimization"
+	@echo "    VEC4_OPT=1 	 == VEC4 optimization"
+	@echo "    TRIBUFFER_OPT=1 == Tribuffer optimization"
+	@echo "    CRC_OPT=1 	 == CRC optimization"
 	@echo "    WARNFLAGS=flag == compiler warning levels (default: -Wall)"
 	@echo "    PIC=(1|0)     == Force enable/disable of position independent code"
 	@echo "    POSTFIX=name  == String added to the name of the the build (default: '')"
