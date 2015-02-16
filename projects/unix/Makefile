@@ -374,8 +374,10 @@ $(SRCDIR)/ShaderCombiner.cpp \
 $(SRCDIR)/Textures.cpp \
 $(SRCDIR)/VI.cpp 
 
-#$(SRCDIR)/3DMathNeon.cpp \
-#$(SRCDIR)/gSPNeon.cpp 
+ifeq ($(NEON), 1)    
+  SOURCE += $(SRCDIR)/gSPNeon.cpp
+  SOURCE += $(SRCDIR)/3DMathNeon.cpp
+endif
 
 # generate a list of object files build, make a temporary directory for them
 OBJECTS := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(filter %.c, $(SOURCE)))
