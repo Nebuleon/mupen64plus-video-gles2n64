@@ -156,13 +156,7 @@ CFLAGS += -D__VEC4_OPT
 CXXFLAGS += -D__VEC4_OPT
 endif
 
-ifeq ($(VC), 1)
-CFLAGS += -DARM -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux
-CXXFLAGS += -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux
-LDLIBS += -lm -L/opt/vc/lib -lEGL -lbcm_host
-endif
-
-LDLIBS += -lm -lGLESv2 -lEGL
+LDLIBS += -lm -lEGL
 
 # Since we are building a shared library, we must compile with -fPIC on some architectures
 # On 32-bit x86 systems we do not want to use -fPIC because we don't have to and it has a big performance penalty on this arch
@@ -236,6 +230,11 @@ CFLAGS += $(LIBPNG_CFLAGS)
 LDLIBS += $(LIBPNG_LDLIBS)
 
 # search for OpenGL libraries
+
+ifeq ($(VC), 1)
+  GL_CFLAGS += -DARM -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux
+  GL_LDLIBS += -lm -L/opt/vc/lib -lGLESv2 -lEGL -lbcm_host
+endif
 ifeq ($(OS), OSX)
   GL_LDLIBS = -framework OpenGL
 endif
