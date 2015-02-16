@@ -49,12 +49,17 @@ EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle CoreLibHandle,
 	CoreVideo_Init 				= (ptr_VidExt_Init)					dlsym(CoreLibHandle, "VidExt_Init");
 
 #ifdef __NEON_OPT
+#ifdef __ANDROID__
     if (android_getCpuFamily() == ANDROID_CPU_FAMILY_ARM &&
             (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON) != 0)
     {
         MathInitNeon();
         gSPInitNeon();
     }
+#else
+    MathInitNeon();
+    gSPInitNeon();
+#endif
 #endif
     ticksInitialize();
 
